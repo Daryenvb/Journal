@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trading Journal — Funded Accounts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --bg-2:#111;
+    --panel:#141414;
+    --panel-2:#1a1a1a;
+    --panel-3:#1f1f1f;
+    --line:#262626;
+    --line-2:#333;
+    --text:#e8e8e8;
+    --muted:#888;
+    --dim:#555;
+    --green:#00ff9d;
+    --green-dim:#00b86f;
+    --green-soft:rgba(0,255,157,.1);
+    --red:#ff3b5c;
+    --red-dim:#b8264a;
+    --red-soft:rgba(255,59,92,.1);
+    --amber:#ffb627;
+    --blue:#4ea3ff;
+    --purple:#c084fc;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  body{
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,157,.06), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255,59,92,.04), transparent 60%),
+      var(--bg);
+    min-height:100vh;
+    padding:24px 20px 80px;
+  }
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.035;z-index:1;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='.9'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>")}
+  .wrap{max-width:1400px;margin:0 auto;position:relative;z-index:2}
+
+  header{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px;
+    flex-wrap:wrap;gap:16px;
+  }
+  .brand{display:flex;flex-direction:column;gap:4px}
+  .brand h1{font-family:'Major Mono Display',monospace;font-size:28px;font-weight:400;letter-spacing:.02em}
+  .brand h1 span{color:var(--green)}
+  .brand .sub{color:var(--muted);font-size:11px;letter-spacing:.15em;text-transform:uppercase}
+  .meta{display:flex;gap:24px;color:var(--muted);font-size:11px;text-align:right;flex-wrap:wrap}
+  .meta div b{color:var(--text);font-weight:500;display:block;font-size:13px;margin-top:2px}
+
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:24px;overflow-x:auto}
+  .tab{background:none;border:none;color:var(--muted);font-family:inherit;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:.15s;white-space:nowrap}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--green);border-bottom-color:var(--green)}
+  .tab .badge{display:inline-block;margin-left:6px;background:var(--green);color:#000;padding:1px 6px;border-radius:2px;font-size:10px;font-weight:700}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:20px;margin-bottom:16px}
+  .panel-title{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  .panel-title::before{content:"";width:6px;height:6px;background:var(--green);display:inline-block}
+
+  .btn{background:var(--panel-2);color:var(--text);border:1px solid var(--line-2);padding:9px 14px;font-family:inherit;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:.15s;border-radius:2px}
+  .btn:hover{border-color:var(--green);color:var(--green)}
+  .btn-primary{background:var(--green);color:#000;border-color:var(--green);font-weight:700}
+  .btn-primary:hover{background:#fff;border-color:#fff;color:#000}
+  .btn-danger{border-color:var(--red-dim);color:var(--red)}
+  .btn-danger:hover{background:var(--red);color:#000;border-color:var(--red)}
+  .btn-ghost{background:transparent;border-color:var(--line)}
+  .btn-sm{padding:6px 10px;font-size:10px}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .field label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+  .field input,.field select,.field textarea{background:var(--bg-2);border:1px solid var(--line-2);color:var(--text);padding:10px 12px;font-family:inherit;font-size:13px;border-radius:2px;transition:.15s}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green);background:var(--bg)}
+
+  .accounts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .account{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:18px;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+  .account::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--dim);transition:.2s}
+  .account:hover{border-color:var(--line-2);transform:translateY(-1px)}
+  .account.selected{border-color:var(--green)}
+  .account.selected::before{background:var(--green)}
+  .account.eligible::before{background:var(--green);box-shadow:0 0 12px var(--green)}
+  .account.burned{opacity:.55}
+  .account.burned::before{background:var(--red)}
+  .acc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px}
+  .acc-name{font-size:15px;font-weight:500;letter-spacing:.02em}
+  .acc-id{font-size:10px;color:var(--dim);letter-spacing:.1em;margin-top:2px}
+  .acc-status{font-size:9px;padding:3px 7px;letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--line-2);border-radius:2px;white-space:nowrap}
+  .status-active{color:var(--blue);border-color:var(--blue)}
+  .status-eligible{color:var(--green);border-color:var(--green);background:rgba(0,255,157,.08)}
+  .status-burned{color:var(--red);border-color:var(--red)}
+  .status-warn{color:var(--amber);border-color:var(--amber)}
+  .acc-balance{font-size:26px;font-weight:300;letter-spacing:-.02em;margin:8px 0 4px}
+  .acc-balance.up{color:var(--green)}
+  .acc-balance.down{color:var(--red)}
+  .acc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:var(--muted);margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+  .acc-meta b{display:block;color:var(--text);font-weight:500;font-size:12px;margin-top:2px}
+  .progress{height:4px;background:var(--bg-2);margin-top:14px;border-radius:1px;overflow:hidden}
+  .progress-bar{height:100%;background:var(--green);transition:width .4s}
+  .progress-label{font-size:10px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between}
+
+  .detail-grid{display:grid;grid-template-columns:420px 1fr;gap:16px}
+  @media(max-width:980px){.detail-grid{grid-template-columns:1fr}}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);margin-bottom:16px}
+  .stat{background:var(--panel);padding:14px 16px}
+  .stat-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .stat-val{font-size:18px;font-weight:500}
+  .stat-val.green{color:var(--green)}
+  .stat-val.red{color:var(--red)}
+  .stat-val.amber{color:var(--amber)}
+  @media(max-width:720px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+
+  /* === BIG TRADE PAD === */
+  .trade-pad{background:var(--panel);border:1px solid var(--line);padding:24px;border-radius:2px}
+  .amount-display{background:var(--bg);border:1px solid var(--line-2);padding:24px 20px;text-align:center;margin-bottom:16px;border-radius:2px}
+  .amount-display .lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .amount-display .val{font-size:42px;font-weight:300;letter-spacing:-.02em;color:var(--text);font-family:'JetBrains Mono',monospace}
+  .amount-display .val.empty{color:var(--dim)}
+  .amount-display .cur{color:var(--green);margin-right:4px;font-weight:400}
+
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px}
+  .key{background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:14px;font-family:inherit;font-size:16px;font-weight:500;cursor:pointer;transition:.1s;border-radius:2px;-webkit-tap-highlight-color:transparent}
+  .key:hover{background:var(--panel-3);border-color:var(--line-2)}
+  .key:active{transform:scale(.96);background:var(--bg)}
+  .key.fn{color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+  .key.fn:hover{color:var(--text)}
+
+  .trade-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .trade-btn{padding:22px 16px;border:1px solid;font-family:inherit;cursor:pointer;transition:.15s;border-radius:2px;display:flex;flex-direction:column;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
+  .trade-btn .icon{font-size:22px;font-weight:700;letter-spacing:.05em}
+  .trade-btn .label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.7}
+  .tp-btn{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .tp-btn:hover:not(:disabled){background:var(--green);color:#000}
+  .sl-btn{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+  .sl-btn:hover:not(:disabled){background:var(--red);color:#000}
+  .trade-btn:disabled{opacity:.35;cursor:not-allowed}
+  .trade-btn:active:not(:disabled){transform:scale(.98)}
+
+  .trade-extras{display:grid;gap:8px;margin-top:10px}
+  .trade-extras input{background:var(--bg-2);border:1px solid var(--line);color:var(--text);padding:9px 12px;font-family:inherit;font-size:12px;border-radius:2px}
+  .trade-extras input:focus{outline:none;border-color:var(--green)}
+
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--line-2);padding:12px 20px;border-radius:2px;font-size:12px;opacity:0;transition:.25s;z-index:100;pointer-events:none;letter-spacing:.05em}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.tp{border-color:var(--green);color:var(--green)}
+  .toast.sl{border-color:var(--red);color:var(--red)}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;font-weight:500;color:var(--muted);font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid var(--line)}
+  td{padding:11px 12px;border-bottom:1px solid var(--line)}
+  tr:hover td{background:var(--panel-2)}
+  td.right,th.right{text-align:right}
+  .tag{display:inline-block;padding:2px 8px;font-size:10px;letter-spacing:.1em;border-radius:2px;font-weight:700}
+  .tag-tp{background:rgba(0,255,157,.12);color:var(--green)}
+  .tag-sl{background:rgba(255,59,92,.12);color:var(--red)}
+  .tag-payout{background:rgba(192,132,252,.12);color:var(--purple)}
+  .tag-burned{background:rgba(255,59,92,.12);color:var(--red)}
+  .tag-active{background:rgba(78,163,255,.12);color:var(--blue)}
+
+  .eligible-banner{background:linear-gradient(135deg,rgba(0,255,157,.12),rgba(0,255,157,.02));border:1px solid var(--green);padding:18px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden}
+  .eligible-banner::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 0% 50%, rgba(0,255,157,.15), transparent 50%);pointer-events:none}
+  .eligible-banner h3{color:var(--green);font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;position:relative}
+  .eligible-banner p{color:var(--muted);font-size:12px;position:relative}
+  .eligible-banner strong{color:var(--text)}
+  .eligible-banner .btn{position:relative}
+
+  .warn-banner{background:linear-gradient(135deg,rgba(255,59,92,.12),rgba(255,59,92,.02));border:1px solid var(--red);padding:16px 20px;margin-bottom:16px}
+  .warn-banner h3{color:var(--red);font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+  .warn-banner p{color:var(--muted);font-size:12px}
+
+  .days-track{display:flex;gap:6px;margin:10px 0 4px}
+  .day-dot{flex:1;height:32px;background:var(--bg-2);border:1px solid var(--line);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim)}
+  .day-dot.qualified{background:rgba(0,255,157,.15);border-color:var(--green);color:var(--green)}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line-2);max-width:480px;width:100%;padding:24px;border-radius:2px;max-height:90vh;overflow-y:auto}
+  .modal h2{font-size:14px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:16px;color:var(--green)}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty h3{font-family:'Major Mono Display',monospace;font-size:20px;margin-bottom:10px;color:var(--text)}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:10px;letter-spacing:.1em;text-transform:uppercase}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .legend i{width:8px;height:8px;display:inline-block;border-radius:50%}
+
+  hr.sep{border:none;border-top:1px dashed var(--line);margin:20px 0}
+  .tiny{font-size:10px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:1px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+
+  .blink{animation:blink 1.4s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+
+  .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .chip{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);padding:6px 12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:2px;transition:.15s;font-family:inherit}
+  .chip:hover{color:var(--text)}
+  .chip.active{background:var(--green);color:#000;border-color:var(--green)}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  .size-presets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .size-btn{background:var(--bg-2);border:1px solid var(--line-2);color:var(--text);padding:12px 8px;border-radius:2px;cursor:pointer;transition:.15s;font-family:inherit;text-align:center}
+  .size-btn:hover{border-color:var(--line-2);background:var(--panel-2)}
+  .size-btn.active{border-color:var(--green);background:rgba(0,255,157,.08)}
+  .size-btn.active .size-amt{color:var(--green)}
+  .size-btn .size-amt{font-size:15px;font-weight:700;letter-spacing:.02em;margin-bottom:3px}
+  .size-btn .size-target{font-size:9px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>FUND<span>::</span>JOURNAL</h1>
+      <div class="sub">// funded account tracker · payout engine</div>
+    </div>
+    <div class="meta">
+      <div>ACTIVE<b id="m-total">0</b></div>
+      <div>BURNED<b id="m-burned">0</b></div>
+      <div>TOTAL PAYOUT<b id="m-payout">$0.00</b></div>
+      <div>NET P&L<b id="m-net">$0.00</b></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="accounts">Accounts <span class="badge" id="badge-accounts" style="display:none">0</span></button>
+    <button class="tab" data-tab="detail" id="tab-detail" style="display:none">Detail</button>
+    <button class="tab" data-tab="history">Payout History</button>
+    <button class="tab" data-tab="archive">Archive <span class="badge" id="badge-burned" style="display:none">0</span></button>
+  </div>
+
+  <section id="view-accounts">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div>
+        <div class="tiny">// active book</div>
+        <div style="font-size:18px;margin-top:4px">Account Portfolio</div>
+      </div>
+      <button class="btn btn-primary" id="add-acc-btn">+ New Account</button>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>Active</span>
+      <span><i style="background:var(--green);box-shadow:0 0 6px var(--green)"></i>Eligible for payout</span>
+      <span><i style="background:var(--amber)"></i>Warning · 4th payout</span>
+    </div>
+
+    <hr class="sep">
+
+    <div id="accounts-grid" class="accounts-grid"></div>
+    <div id="empty-state" class="empty" style="display:none">
+      <h3>no accounts yet</h3>
+      <p>Create your first funded account to start tracking</p>
+    </div>
+  </section>
+
+  <section id="view-detail" style="display:none">
+    <button class="btn btn-ghost btn-sm" id="back-btn" style="margin-bottom:16px">← Back</button>
+
+    <div id="detail-eligible-banner"></div>
+    <div id="detail-warn-banner"></div>
+
+    <div class="flex-between" style="margin-bottom:16px">
+      <div>
+        <div class="tiny" id="d-id">—</div>
+        <div style="font-size:22px;margin-top:4px" id="d-name">—</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="edit-btn">Edit</button>
+        <button class="btn btn-sm btn-danger" id="burn-btn">Burn / Close</button>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Real Balance</div><div class="stat-val" id="s-balance">$0.00</div></div>
+      <div class="stat"><div class="stat-label">Lifetime Profit</div><div class="stat-val" id="s-profit">$0.00</div></div>
+      <div class="stat"><div class="stat-label">Payout Count</div><div class="stat-val" id="s-payouts">0</div></div>
+      <div class="stat"><div class="stat-label">Total Withdrawn</div><div class="stat-val" id="s-withdrawn">$0.00</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Payout cycle progress</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:4px">
+        Need <strong style="color:var(--text)">5 days</strong> with profit greater than <strong style="color:var(--green)" id="d-target">$150</strong> (not necessarily consecutive)
+      </div>
+      <div class="days-track" id="days-track"></div>
+      <div class="progress-label">
+        <span id="days-counter">0/5 qualifying days</span>
+        <span id="cycle-status">Current cycle</span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div>
+        <div class="trade-pad">
+          <div class="amount-display">
+            <div class="lbl">Trade Amount</div>
+            <div class="val empty" id="amount-val"><span class="cur">$</span><span id="amount-num">0.00</span></div>
+          </div>
+
+          <div class="keypad">
+            <button class="key" data-k="1">1</button>
+            <button class="key" data-k="2">2</button>
+            <button class="key" data-k="3">3</button>
+            <button class="key" data-k="4">4</button>
+            <button class="key" data-k="5">5</button>
+            <button class="key" data-k="6">6</button>
+            <button class="key" data-k="7">7</button>
+            <button class="key" data-k="8">8</button>
+            <button class="key" data-k="9">9</button>
+            <button class="key fn" data-k=".">.</button>
+            <button class="key" data-k="0">0</button>
+            <button class="key fn" data-k="back">⌫</button>
+          </div>
+
+          <div class="trade-buttons">
+            <button class="trade-btn sl-btn" id="btn-sl">
+              <div class="icon">SL</div>
+              <div class="label">Stop Loss</div>
+            </button>
+            <button class="trade-btn tp-btn" id="btn-tp">
+              <div class="icon">TP</div>
+              <div class="label">Take Profit</div>
+            </button>
+          </div>
+
+          <div class="trade-extras">
+            <input type="date" id="trade-date" title="Trade date">
+            <input type="text" id="trade-note" placeholder="note (optional) · setup / pair / context">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-title">Trade Journal</div>
+          <div style="overflow-x:auto;max-height:580px;overflow-y:auto">
+            <table id="trades-table">
+              <thead>
+                <tr><th>Date</th><th>Type</th><th class="right">Amount</th><th class="right">Day P&L</th><th>Note</th><th></th></tr>
+              </thead>
+              <tbody id="trades-tbody"></tbody>
+            </table>
+          </div>
+          <div id="trades-empty" class="empty" style="padding:30px 10px;display:none">
+            <p>No trades logged yet</p>
+            <p class="tiny" style="margin-top:8px">Enter an amount and tap TP or SL</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Payouts on this account</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Date</th><th class="right">Profit at payout</th><th class="right">Withdrawn (50%)</th><th class="right">Left in account</th><th></th></tr>
+          </thead>
+          <tbody id="payouts-tbody"></tbody>
+        </table>
+      </div>
+      <div id="payouts-empty" class="empty" style="padding:24px 10px;display:none"><p>No payouts processed yet</p></div>
+    </div>
+  </section>
+
+  <section id="view-history" style="display:none">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div>
+        <div class="tiny">// withdrawals</div>
+        <div style="font-size:18px;margin-top:4px">Global Payout History</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Total Payouts</div><div class="stat-val" id="h-count">0</div></div>
+      <div class="stat"><div class="stat-label">Total Withdrawn</div><div class="stat-val green" id="h-withdrawn">$0.00</div></div>
+      <div class="stat"><div class="stat-label">Total Cost (all)</div><div class="stat-val red" id="h-cost">$0.00</div></div>
+      <div class="stat"><div class="stat-label">Net Profit</div><div class="stat-val" id="h-net">$0.00</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="active">Active accounts</button>
+      <button class="chip" data-filter="burned">Burned accounts</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">All withdrawals</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Account</th><th>Status</th><th class="right">Profit cycle</th><th class="right">Withdrawn</th><th>#</th></tr>
+          </thead>
+          <tbody id="history-tbody"></tbody>
+        </table>
+      </div>
+      <div id="history-empty" class="empty" style="padding:40px 10px;display:none"><p>No payouts have been processed across any account</p></div>
+    </div>
+  </section>
+
+  <section id="view-archive" style="display:none">
+    <div class="flex-between" style="margin-bottom:16px">
+      <div>
+        <div class="tiny">// archive</div>
+        <div style="font-size:18px;margin-top:4px">Burned / Closed Accounts</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Burned accounts</div><div class="stat-val" id="a-count">0</div></div>
+      <div class="stat"><div class="stat-label">Lifetime payouts</div><div class="stat-val green" id="a-withdrawn">$0.00</div></div>
+      <div class="stat"><div class="stat-label">Cost of burned</div><div class="stat-val red" id="a-cost">$0.00</div></div>
+      <div class="stat"><div class="stat-label">Net from burned</div><div class="stat-val" id="a-net">$0.00</div></div>
+    </div>
+
+    <div id="archive-grid" class="accounts-grid"></div>
+    <div id="archive-empty" class="empty" style="display:none">
+      <h3>nothing here yet</h3>
+      <p>Burned accounts will appear here for full historical record</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">New account</h2>
+    <div class="field">
+      <label>Account name</label>
+      <input type="text" id="f-name" placeholder="e.g. FTMO · Challenge #2">
+    </div>
+    <div class="field">
+      <label>Account size</label>
+      <div class="size-presets">
+        <button type="button" class="size-btn" data-size="25000" data-target="100">
+          <div class="size-amt">$25K</div>
+          <div class="size-target">target $100/day</div>
+        </button>
+        <button type="button" class="size-btn" data-size="50000" data-target="150">
+          <div class="size-amt">$50K</div>
+          <div class="size-target">target $150/day</div>
+        </button>
+        <button type="button" class="size-btn" data-size="custom">
+          <div class="size-amt">Custom</div>
+          <div class="size-target">set manually</div>
+        </button>
+      </div>
+    </div>
+    <div class="row" id="custom-fields" style="display:none">
+      <div class="field">
+        <label>Account size</label>
+        <input type="number" id="f-size" step="0.01" min="0" placeholder="50000">
+      </div>
+      <div class="field">
+        <label>Daily profit target ($)</label>
+        <input type="number" id="f-target" step="0.01" min="0" placeholder="150">
+      </div>
+    </div>
+    <div class="field">
+      <label>Cost to obtain (challenge fee paid)</label>
+      <input type="number" id="f-cost" step="0.01" min="0" placeholder="299.00">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="delete-modal">
+  <div class="modal">
+    <h2 style="color:var(--red)">Delete trade?</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:8px">You are about to delete:</p>
+    <div style="background:var(--bg);border:1px solid var(--line-2);padding:16px;border-radius:2px;margin-bottom:14px;text-align:center">
+      <div id="del-trade-info" style="font-size:18px;font-weight:500">—</div>
+      <div id="del-trade-date" class="tiny" style="margin-top:6px">—</div>
+    </div>
+    <p style="color:var(--muted);font-size:11px">This will recalculate your cycle progress and balance. The action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn" id="delete-cancel">Cancel</button>
+      <button class="btn btn-danger" id="delete-confirm" style="background:var(--red);color:#000;font-weight:700">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="payout-modal">
+  <div class="modal">
+    <h2>Process Payout</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:14px">You are eligible to withdraw. The platform keeps 50% of accumulated profit.</p>
+    <div class="stat-grid" style="grid-template-columns:1fr 1fr">
+      <div class="stat"><div class="stat-label">Cycle Profit</div><div class="stat-val green" id="po-profit">$0</div></div>
+      <div class="stat"><div class="stat-label">You receive (50%)</div><div class="stat-val" id="po-receive">$0</div></div>
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin-top:14px">After this payout, a new 4-day qualifying cycle starts.</p>
+    <div class="modal-actions">
+      <button class="btn" id="payout-cancel">Cancel</button>
+      <button class="btn btn-primary" id="payout-confirm">Confirm withdrawal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">added</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   STORAGE — pure localStorage (most reliable cross-environment)
+   ============================================================ */
+const STORAGE_KEY = 'fund_journal_v2';
+let state = { accounts: [], activeId: null };
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === 'object' && Array.isArray(parsed.accounts)){
+        state = parsed;
+      }
+    }
+  }catch(e){ console.warn('load fresh:', e); }
+  if(!state.accounts) state.accounts = [];
+  state.accounts.forEach(a=>{
+    if(!a.trades) a.trades = [];
+    if(!a.payouts) a.payouts = [];
+    if(typeof a.burned === 'undefined') a.burned = false;
+    if(typeof a.dailyTarget === 'undefined'){
+      // Backfill: 50k → 150, 25k → 100, else 1% of size as a reasonable default
+      const s = Number(a.size)||0;
+      if(s === 50000) a.dailyTarget = 150;
+      else if(s === 25000) a.dailyTarget = 100;
+      else a.dailyTarget = Math.max(50, Math.round(s*0.003));
+    }
+  });
+}
+
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('save failed', e); alert('Could not save data: ' + e.message); }
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const fmt = n => '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const todayISO = () => {
+  const d = new Date();
+  const tz = d.getTimezoneOffset()*60000;
+  return new Date(d-tz).toISOString().slice(0,10);
+};
+const uid = () => Math.random().toString(36).slice(2,8).toUpperCase();
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function toast(msg, kind){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (kind||'');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ============================================================
+   BUSINESS LOGIC
+   ============================================================ */
+function getCurrentCycleTrades(acc){
+  const lastPayout = acc.payouts && acc.payouts.length
+    ? acc.payouts[acc.payouts.length-1].date
+    : null;
+  return acc.trades.filter(t => !lastPayout || t.date > lastPayout);
+}
+
+function dailyTotals(trades){
+  const m = {};
+  trades.forEach(t=>{
+    const v = t.type==='TP' ? Number(t.amount) : -Number(t.amount);
+    m[t.date] = (m[t.date]||0) + v;
+  });
+  return m;
+}
+
+function qualifyingDaysInCycle(acc){
+  const trades = getCurrentCycleTrades(acc);
+  const daily = dailyTotals(trades);
+  const target = Number(acc.dailyTarget)||150;
+  return Object.entries(daily)
+    .map(([date,pnl])=>({date,pnl}))
+    .filter(d => d.pnl > target)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function cycleProfit(acc){
+  return getCurrentCycleTrades(acc).reduce(
+    (s,t)=> s + (t.type==='TP'?Number(t.amount):-Number(t.amount)), 0);
+}
+
+function realBalance(acc){
+  return Number(acc.size) + cycleProfit(acc);
+}
+
+function isEligible(acc){
+  if(acc.burned) return false;
+  return qualifyingDaysInCycle(acc).length >= 5 && cycleProfit(acc) > 0;
+}
+
+function totalProfit(acc){
+  return acc.trades.reduce((s,t)=> s + (t.type==='TP'?Number(t.amount):-Number(t.amount)), 0);
+}
+function totalWithdrawn(acc){
+  return (acc.payouts||[]).reduce((s,p)=> s + Number(p.withdrawn), 0);
+}
+
+/* ============================================================
+   AMOUNT KEYPAD (shared input for TP/SL)
+   ============================================================ */
+let currentAmount = '';
+function refreshAmount(){
+  const el = document.getElementById('amount-num');
+  const wrap = document.getElementById('amount-val');
+  const tp = document.getElementById('btn-tp');
+  const sl = document.getElementById('btn-sl');
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  const burned = acc && acc.burned;
+
+  if(!currentAmount){
+    el.textContent = '0.00';
+    wrap.classList.add('empty');
+    tp.disabled = true; sl.disabled = true;
+  } else {
+    el.textContent = currentAmount;
+    wrap.classList.remove('empty');
+    const val = parseFloat(currentAmount);
+    tp.disabled = !val || val<=0 || burned;
+    sl.disabled = !val || val<=0 || burned;
+  }
+}
+function pressKey(k){
+  if(k==='back'){
+    currentAmount = currentAmount.slice(0,-1);
+  } else if(k==='.'){
+    if(!currentAmount.includes('.')) currentAmount += currentAmount?'.':'0.';
+  } else {
+    if(currentAmount==='0') currentAmount = k;
+    else currentAmount += k;
+  }
+  refreshAmount();
+}
+document.querySelectorAll('.key').forEach(b=>{
+  b.addEventListener('click', ()=>pressKey(b.dataset.k));
+});
+
+// Physical keyboard
+document.addEventListener('keydown', (e)=>{
+  if(document.getElementById('view-detail').style.display==='none') return;
+  if(document.getElementById('modal').classList.contains('open')) return;
+  if(document.getElementById('payout-modal').classList.contains('open')) return;
+  const tag = (e.target.tagName||'').toLowerCase();
+  if(tag==='input' || tag==='textarea' || tag==='select') return;
+  if(/[0-9]/.test(e.key)) pressKey(e.key);
+  else if(e.key==='.') pressKey('.');
+  else if(e.key==='Backspace') pressKey('back');
+  else if(e.key.toLowerCase()==='t' && !document.getElementById('btn-tp').disabled) logTrade('TP');
+  else if(e.key.toLowerCase()==='s' && !document.getElementById('btn-sl').disabled) logTrade('SL');
+});
+
+/* ============================================================
+   TRADE LOGGING
+   ============================================================ */
+function logTrade(type){
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc || acc.burned) return;
+  const amount = parseFloat(currentAmount);
+  if(!amount || amount<=0) return;
+  const date = document.getElementById('trade-date').value || todayISO();
+  const note = document.getElementById('trade-note').value.trim();
+  acc.trades.push({ id:uid(), type, amount, date, note, created:Date.now() });
+  saveState();
+  currentAmount = '';
+  document.getElementById('trade-note').value = '';
+  toast(`${type} ${fmt(amount)} recorded`, type.toLowerCase());
+  renderDetail();
+  refreshAmount();
+}
+
+let pendingDeleteId = null;
+
+function deleteTrade(tid){
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc) return;
+  const trade = acc.trades.find(t=>t.id===tid);
+  if(!trade) return;
+  pendingDeleteId = tid;
+  const info = document.getElementById('del-trade-info');
+  const date = document.getElementById('del-trade-date');
+  const color = trade.type==='TP' ? 'var(--green)' : 'var(--red)';
+  info.innerHTML = `<span style="color:${color}">${trade.type}</span> · ${fmt(trade.amount)}`;
+  date.textContent = `${trade.date}${trade.note?' · '+trade.note:''}`;
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function confirmDelete(){
+  if(!pendingDeleteId) return;
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc){ pendingDeleteId = null; closeDeleteModal(); return; }
+  acc.trades = acc.trades.filter(t=>t.id!==pendingDeleteId);
+  pendingDeleteId = null;
+  saveState();
+  closeDeleteModal();
+  renderDetail();
+  toast('trade deleted');
+}
+
+function closeDeleteModal(){
+  document.getElementById('delete-modal').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+document.getElementById('delete-confirm').addEventListener('click', confirmDelete);
+document.getElementById('delete-cancel').addEventListener('click', closeDeleteModal);
+
+// Document-level delegation — survives any re-render anywhere
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.del-trade');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const tid = btn.getAttribute('data-tid');
+  if(tid) deleteTrade(tid);
+});
+
+document.getElementById('btn-tp').addEventListener('click', ()=>logTrade('TP'));
+document.getElementById('btn-sl').addEventListener('click', ()=>logTrade('SL'));
+
+/* ============================================================
+   ACCOUNTS LIST
+   ============================================================ */
+function buildCard(acc){
+  const eligible = isEligible(acc);
+  const payoutCount = (acc.payouts||[]).length;
+  const bal = realBalance(acc);
+  const profit = totalProfit(acc);
+  const cycle = cycleProfit(acc);
+  const qDays = qualifyingDaysInCycle(acc).length;
+
+  let status = 'Active', statusClass = 'status-active';
+  if(acc.burned){ status='Burned'; statusClass='status-burned'; }
+  else if(eligible){ status='Eligible'; statusClass='status-eligible'; }
+  else if(payoutCount >= 4){ status='Burn next'; statusClass='status-warn'; }
+
+  const sizeShort = acc.size === 25000 ? '25K' : acc.size === 50000 ? '50K' : fmt(acc.size);
+  const card = document.createElement('div');
+  card.className = 'account' + (eligible?' eligible':'') + (acc.burned?' burned':'');
+  card.addEventListener('click', () => openDetail(acc.id));
+  card.innerHTML = `
+    <div class="acc-head">
+      <div>
+        <div class="acc-name">${escapeHtml(acc.name)}</div>
+        <div class="acc-id">#${acc.id} · ${sizeShort} · target ${fmt(acc.dailyTarget||150)} · cost ${fmt(acc.cost)}</div>
+      </div>
+      <div class="acc-status ${statusClass}">${status}</div>
+    </div>
+    <div class="acc-balance ${cycle>0?'up':cycle<0?'down':''}">${fmt(bal)}</div>
+    <div class="tiny" style="color:${cycle>0?'var(--green)':cycle<0?'var(--red)':'var(--muted)'}">
+      ${cycle>=0?'+':''}${fmt(cycle)} cycle P&L
+    </div>
+    <div class="progress"><div class="progress-bar" style="width:${Math.min(100,(qDays/5)*100)}%"></div></div>
+    <div class="progress-label">
+      <span>${qDays}/5 qualifying days</span>
+      <span>${payoutCount} payout${payoutCount===1?'':'s'}</span>
+    </div>
+    <div class="acc-meta">
+      <div>Lifetime profit<b style="color:${profit>=0?'var(--green)':'var(--red)'}">${fmt(profit)}</b></div>
+      <div>Withdrawn<b>${fmt(totalWithdrawn(acc))}</b></div>
+    </div>
+  `;
+  return card;
+}
+
+function renderAccounts(){
+  const grid = document.getElementById('accounts-grid');
+  const empty = document.getElementById('empty-state');
+  grid.innerHTML = '';
+  const active = state.accounts.filter(a=>!a.burned);
+  if(active.length===0) empty.style.display='block';
+  else empty.style.display='none';
+  active.forEach(acc=> grid.appendChild(buildCard(acc)));
+  renderTopMeta();
+  const badge = document.getElementById('badge-accounts');
+  badge.style.display = active.length?'inline-block':'none';
+  badge.textContent = active.length;
+  const bBadge = document.getElementById('badge-burned');
+  const burnedCount = state.accounts.filter(a=>a.burned).length;
+  bBadge.style.display = burnedCount?'inline-block':'none';
+  bBadge.textContent = burnedCount;
+}
+
+function renderTopMeta(){
+  let totalPayout = 0, totalCost = 0;
+  state.accounts.forEach(a => {
+    totalPayout += totalWithdrawn(a);
+    totalCost += Number(a.cost||0);
+  });
+  document.getElementById('m-total').textContent = state.accounts.filter(a=>!a.burned).length;
+  document.getElementById('m-burned').textContent = state.accounts.filter(a=>a.burned).length;
+  document.getElementById('m-payout').textContent = fmt(totalPayout);
+  const net = totalPayout - totalCost;
+  const netEl = document.getElementById('m-net');
+  netEl.textContent = (net>=0?'+':'') + fmt(net);
+  netEl.style.color = net>=0?'var(--green)':'var(--red)';
+}
+
+/* ============================================================
+   DETAIL
+   ============================================================ */
+function openDetail(id){
+  state.activeId = id;
+  document.getElementById('tab-detail').style.display = 'block';
+  switchTab('detail');
+  currentAmount = '';
+  document.getElementById('trade-date').value = todayISO();
+  document.getElementById('trade-note').value = '';
+  renderDetail();
+  refreshAmount();
+}
+
+function renderDetail(){
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc) return;
+
+  document.getElementById('d-name').textContent = acc.name + (acc.burned?' [BURNED]':'');
+  const sizeShort = acc.size === 25000 ? '25K' : acc.size === 50000 ? '50K' : fmt(acc.size);
+  document.getElementById('d-id').textContent = `#${acc.id} · ${sizeShort} · TARGET ${fmt(acc.dailyTarget||150)}/DAY · COST ${fmt(acc.cost)}`;
+
+  const bal = realBalance(acc);
+  const cycle = cycleProfit(acc);
+  document.getElementById('s-balance').textContent = fmt(bal);
+  document.getElementById('s-balance').className = 'stat-val ' + (cycle>0?'green':cycle<0?'red':'');
+  const tp = totalProfit(acc);
+  document.getElementById('s-profit').textContent = (tp>=0?'+':'') + fmt(tp);
+  document.getElementById('s-profit').className = 'stat-val ' + (tp>=0?'green':'red');
+  document.getElementById('s-payouts').textContent = (acc.payouts||[]).length;
+  document.getElementById('s-withdrawn').textContent = fmt(totalWithdrawn(acc));
+
+  const qDays = qualifyingDaysInCycle(acc);
+  const target = Number(acc.dailyTarget)||150;
+  document.getElementById('d-target').textContent = fmt(target);
+  const track = document.getElementById('days-track');
+  track.innerHTML = '';
+  for(let i=0;i<5;i++){
+    const div = document.createElement('div');
+    div.className = 'day-dot' + (i<qDays.length?' qualified':'');
+    div.textContent = i<qDays.length ? qDays[i].date.slice(5) : '—';
+    track.appendChild(div);
+  }
+  document.getElementById('days-counter').textContent = `${qDays.length}/5 qualifying days (profit > ${fmt(target)})`;
+  document.getElementById('cycle-status').textContent = `Cycle P&L: ${fmt(cycle)}`;
+
+  const eligible = isEligible(acc);
+  const payoutCount = (acc.payouts||[]).length;
+  const eb = document.getElementById('detail-eligible-banner');
+  const wb = document.getElementById('detail-warn-banner');
+  eb.innerHTML = ''; wb.innerHTML = '';
+
+  if(eligible && !acc.burned){
+    const half = cycle / 2;
+    const banner = document.createElement('div');
+    banner.className = 'eligible-banner';
+    banner.innerHTML = `
+      <div>
+        <h3>● Payout eligible</h3>
+        <p>Cycle profit: <strong>${fmt(cycle)}</strong> · You can withdraw <strong style="color:var(--green)">${fmt(half)}</strong> (50%)</p>
+      </div>
+      <button class="btn btn-primary blink">Request payout →</button>`;
+    banner.querySelector('button').addEventListener('click', openPayoutModal);
+    eb.appendChild(banner);
+  }
+
+  if(payoutCount >= 4 && !acc.burned){
+    wb.innerHTML = `
+      <div class="warn-banner">
+        <h3>⚠ 4 payouts reached — consider burning this account</h3>
+        <p>This account has completed 4 payout cycles. As per your strategy, mark it as burned and rotate to a fresh challenge.</p>
+      </div>`;
+  } else if(payoutCount === 3 && eligible){
+    wb.innerHTML = `
+      <div class="warn-banner" style="border-color:var(--amber);background:linear-gradient(135deg,rgba(255,182,39,.1),rgba(255,182,39,.02))">
+        <h3 style="color:var(--amber)">⚠ This will be your 4th payout</h3>
+        <p>After this withdrawal you should consider burning the account on the next cycle.</p>
+      </div>`;
+  }
+
+  document.getElementById('burn-btn').textContent = acc.burned ? 'Restore account' : 'Burn / Close';
+
+  renderTrades(acc);
+  renderPayouts(acc);
+}
+
+function renderTrades(acc){
+  const tbody = document.getElementById('trades-tbody');
+  const empty = document.getElementById('trades-empty');
+  tbody.innerHTML = '';
+  if(!acc.trades.length){ empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  const daily = dailyTotals(acc.trades);
+  const sorted = [...acc.trades].sort((a,b)=> b.date.localeCompare(a.date) || b.created - a.created);
+  sorted.forEach(t=>{
+    const tr = document.createElement('tr');
+    const dayPnl = daily[t.date];
+    tr.innerHTML = `
+      <td>${t.date}</td>
+      <td><span class="tag tag-${t.type.toLowerCase()}">${t.type}</span></td>
+      <td class="right" style="color:${t.type==='TP'?'var(--green)':'var(--red)'}">${t.type==='TP'?'+':'-'}${fmt(t.amount)}</td>
+      <td class="right" style="color:${dayPnl>0?'var(--green)':dayPnl<0?'var(--red)':'var(--muted)'}">${dayPnl>=0?'+':''}${fmt(dayPnl)}</td>
+      <td style="color:var(--muted)">${escapeHtml(t.note||'—')}</td>
+      <td class="right"></td>
+    `;
+    // Attach delete button with a direct listener — most reliable approach
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn btn-sm';
+    delBtn.style.cssText = 'color:var(--red);border-color:var(--line-2);padding:6px 12px;font-size:16px;line-height:1;font-weight:700';
+    delBtn.textContent = '×';
+    delBtn.setAttribute('aria-label','Delete trade');
+    delBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      deleteTrade(t.id);
+    });
+    tr.lastElementChild.appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderPayouts(acc){
+  const tbody = document.getElementById('payouts-tbody');
+  const empty = document.getElementById('payouts-empty');
+  tbody.innerHTML = '';
+  const ps = acc.payouts||[];
+  if(!ps.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  ps.slice().reverse().forEach((p,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.date}</td>
+      <td class="right">${fmt(p.profit)}</td>
+      <td class="right" style="color:var(--green)">${fmt(p.withdrawn)}</td>
+      <td class="right" style="color:var(--muted)">${fmt(p.profit - p.withdrawn)}</td>
+      <td><span class="tag tag-payout">#${ps.length - i}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+let historyFilter = 'all';
+function renderHistory(){
+  const all = [];
+  let totalW = 0, totalCost = 0;
+  state.accounts.forEach(acc=>{
+    totalCost += Number(acc.cost||0);
+    (acc.payouts||[]).forEach((p,i)=>{
+      all.push({...p, account:acc.name, accId:acc.id, num:i+1, burned:acc.burned});
+      totalW += Number(p.withdrawn);
+    });
+  });
+  all.sort((a,b)=>b.date.localeCompare(a.date));
+
+  document.getElementById('h-count').textContent = all.length;
+  document.getElementById('h-withdrawn').textContent = fmt(totalW);
+  document.getElementById('h-cost').textContent = fmt(totalCost);
+  const net = totalW - totalCost;
+  const netEl = document.getElementById('h-net');
+  netEl.textContent = (net>=0?'+':'') + fmt(net);
+  netEl.className = 'stat-val ' + (net>=0?'green':'red');
+
+  let filtered = all;
+  if(historyFilter==='active') filtered = all.filter(p=>!p.burned);
+  if(historyFilter==='burned') filtered = all.filter(p=>p.burned);
+
+  const tbody = document.getElementById('history-tbody');
+  const empty = document.getElementById('history-empty');
+  tbody.innerHTML = '';
+  if(!filtered.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  filtered.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.date}</td>
+      <td>${escapeHtml(p.account)} <span class="tiny">#${p.accId}</span></td>
+      <td>${p.burned?'<span class="tag tag-burned">BURNED</span>':'<span class="tag tag-active">ACTIVE</span>'}</td>
+      <td class="right">${fmt(p.profit)}</td>
+      <td class="right" style="color:var(--green)">${fmt(p.withdrawn)}</td>
+      <td><span class="tag tag-payout">#${p.num}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    historyFilter = c.dataset.filter;
+    renderHistory();
+  });
+});
+
+/* ============================================================
+   ARCHIVE
+   ============================================================ */
+function renderArchive(){
+  const burned = state.accounts.filter(a=>a.burned);
+  const grid = document.getElementById('archive-grid');
+  const empty = document.getElementById('archive-empty');
+  grid.innerHTML = '';
+  if(!burned.length) empty.style.display='block';
+  else empty.style.display='none';
+  burned.forEach(acc=> grid.appendChild(buildCard(acc)));
+
+  let totalW=0, totalC=0;
+  burned.forEach(a=>{ totalW+=totalWithdrawn(a); totalC+=Number(a.cost||0); });
+  document.getElementById('a-count').textContent = burned.length;
+  document.getElementById('a-withdrawn').textContent = fmt(totalW);
+  document.getElementById('a-cost').textContent = fmt(totalC);
+  const net = totalW - totalC;
+  const netEl = document.getElementById('a-net');
+  netEl.textContent = (net>=0?'+':'') + fmt(net);
+  netEl.className = 'stat-val ' + (net>=0?'green':'red');
+}
+
+/* ============================================================
+   MODAL (add/edit account)
+   ============================================================ */
+let modalMode = 'add';
+let modalSelectedPreset = null; // '25000', '50000', 'custom', or null
+
+function applyPreset(preset){
+  modalSelectedPreset = preset;
+  document.querySelectorAll('.size-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.size === preset);
+  });
+  const custom = document.getElementById('custom-fields');
+  if(preset === 'custom'){
+    custom.style.display = 'grid';
+  } else if(preset === '25000'){
+    custom.style.display = 'none';
+    document.getElementById('f-size').value = '25000';
+    document.getElementById('f-target').value = '100';
+  } else if(preset === '50000'){
+    custom.style.display = 'none';
+    document.getElementById('f-size').value = '50000';
+    document.getElementById('f-target').value = '150';
+  }
+}
+
+document.querySelectorAll('.size-btn').forEach(b=>{
+  b.addEventListener('click', ()=> applyPreset(b.dataset.size));
+});
+
+function openModal(mode){
+  modalMode = mode;
+  const m = document.getElementById('modal');
+  const title = document.getElementById('modal-title');
+  document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+  modalSelectedPreset = null;
+
+  if(mode==='add'){
+    title.textContent = 'New account';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-size').value = '';
+    document.getElementById('f-target').value = '';
+    document.getElementById('f-cost').value = '';
+    document.getElementById('custom-fields').style.display = 'none';
+  } else if(mode==='edit'){
+    const acc = state.accounts.find(a=>a.id===state.activeId);
+    if(!acc) return;
+    title.textContent = 'Edit account';
+    document.getElementById('f-name').value = acc.name;
+    document.getElementById('f-size').value = acc.size;
+    document.getElementById('f-target').value = acc.dailyTarget || 150;
+    document.getElementById('f-cost').value = acc.cost;
+    // Auto-detect preset
+    if(Number(acc.size)===25000 && Number(acc.dailyTarget)===100) applyPreset('25000');
+    else if(Number(acc.size)===50000 && Number(acc.dailyTarget)===150) applyPreset('50000');
+    else applyPreset('custom');
+  }
+  m.classList.add('open');
+  setTimeout(()=>document.getElementById('f-name').focus(), 50);
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+function saveModal(){
+  try{
+    const name = document.getElementById('f-name').value.trim();
+    const size = parseFloat(document.getElementById('f-size').value);
+    const target = parseFloat(document.getElementById('f-target').value);
+    const cost = parseFloat(document.getElementById('f-cost').value);
+    if(!name){ alert('Name is required'); return; }
+    if(!size || size<=0){ alert('Account size is required — pick 25K, 50K, or Custom'); return; }
+    if(!target || target<=0){ alert('Daily profit target is required'); return; }
+    const safeCost = isNaN(cost)?0:cost;
+    if(modalMode==='add'){
+      state.accounts.push({
+        id: uid(), name, size, cost: safeCost, dailyTarget: target,
+        trades: [], payouts: [], burned:false, created: Date.now()
+      });
+    } else {
+      const acc = state.accounts.find(a=>a.id===state.activeId);
+      if(acc){ acc.name = name; acc.size = size; acc.cost = safeCost; acc.dailyTarget = target; }
+    }
+    saveState();
+    closeModal();
+    renderAccounts();
+    if(modalMode==='edit') renderDetail();
+    toast(modalMode==='add' ? 'account created' : 'account updated');
+  }catch(err){
+    console.error(err);
+    alert('Could not save: ' + err.message);
+  }
+}
+
+document.getElementById('add-acc-btn').addEventListener('click', ()=>openModal('add'));
+document.getElementById('edit-btn').addEventListener('click', ()=>openModal('edit'));
+document.getElementById('modal-save').addEventListener('click', saveModal);
+document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+['f-name','f-size','f-target','f-cost'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown', e=>{
+    if(e.key==='Enter') saveModal();
+  });
+});
+
+/* ============================================================
+   PAYOUT
+   ============================================================ */
+function openPayoutModal(){
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc || !isEligible(acc)) return;
+  const profit = cycleProfit(acc);
+  document.getElementById('po-profit').textContent = fmt(profit);
+  document.getElementById('po-receive').textContent = fmt(profit/2);
+  document.getElementById('payout-modal').classList.add('open');
+}
+function closePayoutModal(){ document.getElementById('payout-modal').classList.remove('open'); }
+
+function confirmPayout(){
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc || !isEligible(acc)) return;
+  const profit = cycleProfit(acc);
+  const withdrawn = profit/2;
+  acc.payouts = acc.payouts || [];
+  acc.payouts.push({ id: uid(), date: todayISO(), profit, withdrawn });
+  saveState();
+  closePayoutModal();
+  renderDetail();
+  toast(`Withdrew ${fmt(withdrawn)}`);
+  if((acc.payouts||[]).length >= 4){
+    setTimeout(()=>{
+      alert('⚠ WARNING\n\nThis account has reached 4 payouts. As per your strategy, you should burn it and rotate to a new challenge.');
+    },350);
+  }
+}
+
+document.getElementById('payout-confirm').addEventListener('click', confirmPayout);
+document.getElementById('payout-cancel').addEventListener('click', closePayoutModal);
+
+function confirmBurn(){
+  const acc = state.accounts.find(a=>a.id===state.activeId);
+  if(!acc) return;
+  const action = acc.burned ? 'restore' : 'burn';
+  const msg = action==='burn'
+    ? `Burn "${acc.name}"?\n\nThe account will be moved to archive but all data (trades, payouts, history) will be preserved.`
+    : `Restore "${acc.name}"?\n\nThe account will become active again.`;
+  if(!confirm(msg)) return;
+  acc.burned = !acc.burned;
+  saveState();
+  renderDetail();
+  renderAccounts();
+  toast(acc.burned ? 'account burned' : 'account restored');
+}
+document.getElementById('burn-btn').addEventListener('click', confirmBurn);
+
+/* ============================================================
+   TABS / NAV
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.getElementById('view-accounts').style.display = name==='accounts'?'block':'none';
+  document.getElementById('view-detail').style.display = name==='detail'?'block':'none';
+  document.getElementById('view-history').style.display = name==='history'?'block':'none';
+  document.getElementById('view-archive').style.display = name==='archive'?'block':'none';
+  if(name==='history') renderHistory();
+  if(name==='accounts') renderAccounts();
+  if(name==='archive') renderArchive();
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', () => {
+    if(t.dataset.tab==='detail' && !state.activeId) return;
+    switchTab(t.dataset.tab);
+  });
+});
+document.getElementById('back-btn').addEventListener('click', ()=>switchTab('accounts'));
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+loadState();
+document.getElementById('trade-date').value = todayISO();
+renderAccounts();
+refreshAmount();
+</script>
+</body>
+</html>
